@@ -28,9 +28,11 @@ O envio de notificações pode provocar picos de tráfego. A arquitetura precisa
 - Criação de documentação suficiente para delimitar os módulos principais e indicar os passos necessários para verificar com eficiência a origem das falhas.
 
 ### Autenticação e Autorização
-Provedor gerenciado de autenticação para os usuários finais, a fim de reduzir a manutenção e favorecer a escala. Quando necessário, suportar outros tipos de login e provedores que usam OAuth2. Modularização por autorização para utilizar contextos de autenticação independentes, visando o controle indireto de ações por meio da localidade dos dados e dos seus escopos conforme os requisitos do sistema.
-
 O sistema deve autenticar usuários e aplicar regras de autorização com perfis (por exemplo, usuário e administrador), atendendo aos requisitos explícitos de gestão de contas e acesso a informações gerenciais.
+
+**Táticas:**
+- Provedor gerenciado de autenticação para usuários finais a fim de reduzir manutenção e favorecer a escala; quando necessário, suportar outros tipos de login e provedores via OAuth2.
+- Modularização por autorização para utilizar contextos de autenticação independentes, aplicando controle de ações pela localidade dos dados e seus escopos conforme os requisitos do sistema.
 
 ## Componentes Principais
 
