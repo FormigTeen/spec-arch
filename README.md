@@ -167,7 +167,7 @@ flowchart TB
   OPER[Operador]
   ANALYTICS[Analytics]
 
-  subgraph CLI[Cliente (PWA)]
+  subgraph CLI["Cliente (PWA)"]
     AUT[Autenticação]
     CAD[Cadastro]
     RANK[Rankings]
