@@ -1223,6 +1223,7 @@ const Presentation = () => (
                 subgraph ROW5[ ]
                   direction LR
                   DASH["Dashboard"]:::comp
+                  CACHE["Cache"]:::comp
                 end
               end
               style ROW1 fill:transparent,stroke-width:0
