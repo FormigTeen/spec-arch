@@ -24,24 +24,24 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart, config, className, styl
         themeVariables: {
           background: 'transparent',
           primaryColor: 'rgba(56,189,248,0.08)',
-          primaryBorderColor: '#e5e7eb',
-          primaryTextColor: '#e5e7eb',
+          primaryBorderColor: '#F8FAFC',
+          primaryTextColor: '#F8FAFC',
           secondaryColor: 'rgba(148,163,184,0.10)',
-          secondaryBorderColor: '#e5e7eb',
+          secondaryBorderColor: '#F8FAFC',
           tertiaryColor: 'rgba(59,130,246,0.08)',
-          lineColor: '#e5e7eb',
-          textColor: '#e5e7eb',
-          nodeTextColor: '#e5e7eb',
-          nodeBorder: '#e5e7eb',
+          lineColor: '#F8FAFC',
+          textColor: '#F8FAFC',
+          nodeTextColor: '#F8FAFC',
+          nodeBorder: '#F8FAFC',
           clusterBkg: 'transparent',
-          clusterBorder: '#94a3b8',
+          clusterBorder: '#E2E8F0',
           edgeLabelBackground: '#0f172a',
         },
         themeCSS: `
           .node rect, .node path { stroke-width: 2.5px; }
           .cluster rect { stroke-width: 2px; }
           .edgePath path { stroke-width: 2.5px; }
-          .label, .node text, .edgeLabel { fill: #e5e7eb; color: #e5e7eb; }
+          .label, .node text, .edgeLabel { fill: #F8FAFC; color: #F8FAFC; }
         `,
         flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'linear' },
         ...config,
@@ -55,6 +55,38 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart, config, className, styl
         const { svg } = await mermaid.render(id, chart);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
+          const svgEl = containerRef.current.querySelector('svg');
+          if (svgEl) {
+            try {
+              const preferNatural = containerRef.current.classList.contains('mermaid-natural');
+              const fitHeight = containerRef.current.classList.contains('mermaid-fit-height');
+              svgEl.style.display = 'block';
+              svgEl.style.margin = '0 auto';
+              if (fitHeight) {
+                // Scale SVG to fit container height, keeping aspect ratio.
+                svgEl.removeAttribute('width');
+                svgEl.removeAttribute('height');
+                svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                svgEl.style.maxHeight = '100%';
+                svgEl.style.height = '100%';
+                svgEl.style.width = 'auto';
+                svgEl.style.maxWidth = '100%';
+              } else if (preferNatural) {
+                // Keep natural SVG sizing: remove explicit width/height to respect viewBox
+                svgEl.removeAttribute('width');
+                svgEl.removeAttribute('height');
+                svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                svgEl.style.width = 'auto';
+                svgEl.style.maxWidth = '100%';
+                svgEl.style.height = 'auto';
+              } else {
+                // Default: responsive fill of container width
+                svgEl.style.width = '100%';
+                svgEl.style.maxWidth = '100%';
+                svgEl.style.height = 'auto';
+              }
+            } catch {}
+          }
         }
       } catch (e) {
         if (containerRef.current) {
