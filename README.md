@@ -1,73 +1,360 @@
-# Sistema de Quizzes e Compras — Arquitetura e Componentes
+# Sistema de Quizzes e Compras — Arquitetura
 
-## Principais Características
+- Projeto: aplicação de quizzes com recompensa financeira e compras de créditos.
+- Baseado no conteúdo dos slides desta mesma codebase (componentes e diagramas).
 
-### Disponibilidade
-O sistema deve permanecer online de forma contínua para permitir que os usuários participem de quizzes e realizem compras. Como a interação de resposta ao quiz pode concentrar grande volume de acessos em janelas curtas, a disponibilidade torna-se crítica para evitar interrupções na experiência (principalmente em quiz com um tempo breve para encerramento) e perda de receita.
+## Sumário
+- Visão Geral
+- Características Arquiteturais (Top 4) + Táticas
+- Estilo Arquitetural (com justificativa)
+- Componentes Candidatos e Responsabilidades
+- Diagramas (Componentes, Módulos e Internos Críticos)
+- Decisões Arquiteturais (ADRs)
+- Telas da Aplicação
 
-**Táticas:**
-- Cadastro de health check em endpoints críticos para monitorar latência e disponibilidade.
-- Cadastro de alertas para latências elevadas em endpoints críticos.
+## Visão Geral
+O sistema permite que usuários disputem quizzes, visualizem rankings, comprem créditos via PIX e recebam notificações sobre novos quizzes. Há uma área administrativa (CMS) para gestão de conteúdo (times, perguntas, respostas e quizzes) e um núcleo operacional (Operador/BFF) que orquestra regras de negócio e integrações com Autenticação, Pagamentos e Analytics/Notificações.
 
-### Elasticidade
-O envio de notificações pode provocar picos de tráfego. A arquitetura precisa escalar automaticamente (para cima e para baixo) a fim de absorver fluxos intensos de usuários em curtos períodos.
+## Características Arquiteturais (Top 4)
 
-**Táticas:**
-- Dados de analytics para rastrear e analisar o uso do usuário no sistema para identificar pontos críticos.
-- Gráficos de observabilidade para ter visibilidade do uso dos recursos em momentos de pico.
-- Camadas de cache nos recursos com maior potencial de uso para conteúdos com baixa taxa de modificação (CDN ou Redis).
-- Desacoplamento de serviços críticos para hospedagem na nuvem que ofereçam escalabilidade horizontal (Google Functions, AWS Lambda, DO Functions, etc.).
+### 1) Disponibilidade
+O sistema deve permanecer online de forma contínua para permitir que os usuários participem de quizzes e realizem compras. Como a resposta ao quiz concentra grande volume de acessos em janelas curtas, a disponibilidade torna-se crítica para evitar interrupções na experiência e perda de receita (ligado a REQ 06, 07, 13 e 15 nos slides).
 
-### Manutenção
-É essencial que a solução seja fácil de operar, mantendo baixo o custo de suporte ao longo do tempo e maximizando o ROI por meio de transações dos usuários. A adoção de módulos com responsabilidades claras, padronização de contratos e observabilidade aceleram correções e o suporte por ecossistema.
+- Táticas:
+  - Health checks e alertas de latência nos endpoints críticos.
+  - Uso de provedores gerenciados para reduzir MTTR (Auth, Pagamentos, Analytics).
+  - Circuit breakers e timeouts no Operador ao integrar serviços externos.
 
-**Táticas:**
-- Priorização de uso de contratos estáveis para implementação de serviços de domínio genéricos, como autenticação e gerenciamento de conteúdo (CMS), minimizando a carga de manutenção e o desenvolvimento de módulos genéricos.
-- Uso de monitoramento de erros para alertas de falhas e, quando aplicável, registro de logs e captura de tracing para investigação (ex.: Sentry).
-- Rotinas de CI/CD claras, simples e semi-automáticas para implantação eficiente de atualizações e reversões, suportadas por comandos ou ferramentas padronizadas do mercado.
-- Criação de documentação suficiente para delimitar os módulos principais e indicar os passos necessários para verificar com eficiência a origem das falhas.
+### 2) Elasticidade
+Notificações sobre início/encerramento de quiz e janelas curtas de realização podem provocar picos de tráfego. A arquitetura precisa escalar automaticamente para absorver fluxos intensos em curtos períodos, bem como retrair após o pico para eficiência de custos.
 
-### Autenticação e Autorização
-O sistema deve autenticar usuários e aplicar regras de autorização com perfis (por exemplo, usuário e administrador), atendendo aos requisitos explícitos de gestão de contas e acesso a informações gerenciais.
+- Táticas:
+  - Observabilidade (métricas e dashboards) para identificar gargalos e dimensionar recursos.
+  - Cache para conteúdos de leitura com baixa taxa de modificação (CDN/Redis).
+  - Desacoplamento de serviços críticos e uso de serviços gerenciados com escala horizontal.
 
-**Táticas:**
-- Provedor gerenciado de autenticação para usuários finais a fim de reduzir manutenção e favorecer a escala; quando necessário, suportar outros tipos de login e provedores via OAuth2.
-- Modularização por autorização para utilizar contextos de autenticação independentes, aplicando controle de ações pela localidade dos dados e seus escopos conforme os requisitos do sistema.
+### 3) Manutenibilidade
+É essencial operar e evoluir a solução com baixo custo de suporte. Módulos com responsabilidades claras, contratos estáveis e observabilidade aceleram correções e suporte.
 
-## Componentes Principais
+- Táticas:
+  - Adoção de provedores genéricos/gerenciados para domínios não diferenciais (Auth, CMS, Pagamentos, Analytics).
+  - CI/CD simples com rollback rápido e versionamento de contratos.
+  - Telemetria e error monitoring (por exemplo, Sentry) para reduzir MTTR.
 
-### 1) CMS Administrativo — Strapi ou FireCMS
-- Tipo: Serviço monolítico para gestão de conteúdo e administração. Centraliza CRUD de times, perguntas, respostas, quizzes e configurações.
-- Autenticação de administradores: Módulo próprio do CMS para usuários administradores.
-- Dados que possui: Catálogos (times/perguntas/respostas/quizzes) e metadados editoriais.
-- Integrações: Expor API somente para o Sistema de Operações consumir conteúdo publicado; não atende usuários finais diretamente.
-- Observação: Banco de dados acoplado ao CMS.
+### 4) Autenticação e Autorização
+O sistema autentica usuários e aplica regras de autorização por perfil (usuário/admin). Autenticação de usuários finais é delegada a um provedor gerenciado; admins usam o módulo do CMS.
 
-### 2) Notificações & Analytics — Firebase (Cloud Messaging + Analytics)
-- Tipo: Serviço dedicado a envio de notificações e rastreamento de eventos de dispositivos/usuários.
-- Responsabilidades: Notificações push (ex.: início de quiz), coleta de eventos (jogou, respondeu, finalizou), funis e públicos.
-- Integrações: Sincroniza com a base de usuários finais do Provedor de Autenticação; recebe gatilhos do Sistema de Operações e do CMS.
-- Dados que possui: Tokens de push, eventos de uso e atribuições de campanha.
+- Táticas:
+  - Provedor gerenciado de autenticação (ex.: Firebase Auth) com tokens de ID.
+  - Escopos por contexto (cliente x admin) e verificação no Operador.
+  - Políticas de expiração/renovação de sessão e MFA opcional.
 
-### 3) Provedor de Autenticação (usuários finais) — Firebase Authentication
-- Tipo: Módulo independente para autenticação e gestão de contas de usuários não administrativos.
-- Responsabilidades: Cadastro/login, recuperação de senha, tokens de ID e perfis básicos.
-- Integrações: FrontEnd (login), Sistema de Operações (autorização via ID), Notificações (tokens de push).
-- Dados que possui: Credenciais, identificadores e atributos mínimos de perfil.
+## Estilo Arquitetural (com justificativa)
+- Estilo: Modular Monolith para o domínio principal (Operador/BFF) + Integração com Serviços Gerenciados (Auth, Pagamentos, Analytics) + FrontEnd PWA. O CMS administrativo é um monólito opinativo acoplado ao seu próprio banco.
+- Justificativa: o domínio do quiz é coeso e beneficia-se de consistência transacional e simplicidade operacional, enquanto capacidades não diferenciais (login, cobrança, métricas) são melhor atendidas por serviços gerenciados, reduzindo tempo de implementação e esforço de manutenção, além de fornecer elasticidade e SLAs nativos.
 
-### 4) Provedor de Pagamentos — Abacate, Strip, Mercado Pago
-- Tipo: Serviço especializado para criar, validar e conciliar transações (ex.: PIX), inclusive repasse de 30% ao vencedor.
-- Responsabilidades: Ordens de pagamento, webhooks de confirmação, carteiras/saldo e relatórios financeiros.
-- Integrações: Sistema de Operações (orquestra o fluxo), Analytics (eventos), CMS (parâmetros e regras comerciais, se necessário).
-- Dados que possui: Transações, comprovantes e reconciliações.
+## Componentes Candidatos e Responsabilidades
 
-### 5) Sistema de Operações (BFF/API & Core) — REST (ou Supabase como backend de dados)
-- Tipo: Serviço monolítico de negócio que expõe a API ao FrontEnd e orquestra regras do domínio.
-- Responsabilidades: Sessões de quiz (criar, responder, encerrar), ranking (geral/por time), convites por e-mail, agendamento de encerramento e agregação de dados para dashboards.
-- Integrações: Lê conteúdo do CMS, autentica via Firebase Auth, chama Pagamentos e dispara Notificações.
-- Dados que possui: Estado transacional do domínio (partidas, respostas, pontuações, rankings materializados).
+1) CMS Administrativo (Strapi/FireCMS)
+- Gestão de conteúdo: times, perguntas, respostas, quizzes e configurações.
+- Autenticação de administradores pelo próprio CMS; banco de dados acoplado.
+- Expõe API somente para o Operador consumir conteúdo publicado.
 
-### 6) FrontEnd — Ionic ou React Web (PWA)
-- Tipo: Aplicação Web (PWA) para usuários e admins (áreas separadas).
-- Responsabilidades: Jogar quiz, ver ranking, comprar créditos e receber notificações.
-- Integrações: Consome Sistema de Operações (APIs), Firebase Auth (login), Pagamentos (checkout) e recebe push.
+2) Notificações & Analytics (Firebase/GA)
+- Notificações push (ex.: início de quiz) e coleta de eventos (jogou, respondeu, finalizou).
+- Dashboards, públicos e funis; integra com Operador e Autenticação.
+
+3) Provedor de Autenticação (ex.: Firebase Auth)
+- Cadastro/login, recuperação de senha, emissão de tokens e perfis básicos de usuários finais.
+- Integra com FrontEnd, Operador e Notificações (tokens de push).
+
+4) Provedor de Pagamentos (ex.: Mercado Pago/Stripe)
+- Criação de ordens, confirmação via webhooks idempotentes e reconciliação (30% ao vencedor).
+- Relatórios financeiros e antifraude; integra com o Operador.
+
+5) Sistema de Operações (BFF/API & Core)
+- Orquestra regras de negócio: sessão de quiz, fechamento, pontuação, ranking, convites, materializações de dashboard.
+- Integra CMS, Auth, Pagamentos e Analytics; mantém estado transacional do domínio.
+
+6) FrontEnd (Ionic/React PWA)
+- Experiência do usuário: autenticação, jogar quiz, ver ranking, pagar, receber push.
+- Consome Operador (APIs), Auth (login), Pagamentos (checkout) e Analytics.
+
+## Diagrama de Componentes (Geral)
+
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+  classDef db fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+
+  subgraph LAYOUT[ ]
+    direction LR
+    subgraph C1[ ]
+      direction TB
+      CLI["Cliente"]:::comp
+      OPER["Operador"]:::compCore
+      DB_OPER[(Operador DB)]:::db
+    end
+    subgraph C2[ ]
+      direction TB
+      AUTH["Auth"]:::comp
+      CMS["CMS"]:::comp
+      DB_CMS[(CMS DB)]:::db
+    end
+    subgraph C3[ ]
+      direction TB
+      PAY["Pagamentos"]:::comp
+      NOTIF["Analytics"]:::comp
+    end
+  end
+
+  DB_OPER <--> OPER
+  OPER <--> CLI
+  CLI <-. Eventos .-> NOTIF
+  OPER -. Eventos .-> NOTIF
+  CLI <--> AUTH
+  CMS --> CLI
+  AUTH --> OPER
+  CMS --> OPER
+  OPER <--> PAY
+  CMS <--> DB_CMS
+```
+
+## Componentes Internos Críticos (≥30%) e Justificativa
+- Operador (Core de domínio):
+  - Abertura/Fechamento de Quiz, Sessão de Quiz, Pontuações, Convites, Materializações de Dashboard, Proxy para micro-serviços externos, Criação/Recepção de Transações.
+  - Justificativa: concentra regras temporais (janelas de quiz), consistência de pontuação e integração financeira; impacto direto em disponibilidade, elasticidade e manutenibilidade.
+- Cliente (PWA):
+  - Autenticação, Cadastro, Rankings, Lista/Sessão de Quiz, Lista de Times, Criação/Confirmação de Pagamentos, Dashboard.
+  - Justificativa: principal superfície de tráfego e percepção de qualidade; requer caching e telemetria.
+- CMS: Quizzes, Respostas, Times, Perguntas, Autenticação de Admin e FrontEnd do CMS.
+  - Justificativa: governança do conteúdo e confiabilidade editorial.
+
+### Diagrama — Operador (internos críticos)
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+  classDef db fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+
+  CLI["Cliente"]:::comp
+  AUTH["Auth"]:::comp
+  PAY["Pagamentos"]:::comp
+  NOTIF["Analytics"]:::comp
+  DB_OPER[(Operador DB)]:::db
+  MSA["Micro-serviço A"]:::comp
+  CMS["CMS"]:::comp
+
+  subgraph OPER["Operador"]
+    direction TB
+    PROXY["Proxy A"]:::comp
+    ABQ["Abertura de Quiz"]:::comp
+    FEQ["Fechamento de Quiz"]:::comp
+    SEQ["Sessão de Quiz"]:::comp
+    PONT["Pontuações"]:::comp
+    CONV["Convites"]:::comp
+    MAT["Materialização de Dashboard"]:::comp
+    CT["Criar Transações"]:::comp
+    RT["Receptor de Transações"]:::comp
+  end
+
+  DB_OPER <--> OPER
+  OPER <--> CLI
+  OPER <--> AUTH
+  OPER <--> PAY
+  OPER -. Eventos .-> NOTIF
+  CMS --> OPER
+  PROXY <--> MSA
+```
+
+### Diagrama — Cliente (telas e módulos)
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+
+  AUTH["Auth"]:::comp
+  CMS["CMS"]:::comp
+  OPER["Operador"]:::compCore
+  ANALYTICS["Analytics"]:::comp
+
+  subgraph CLI["Cliente (PWA)"]
+    AUT["Autenticação"]:::comp
+    CAD["Cadastro"]:::comp
+    RANK["Rankings"]:::comp
+    LQUIZ["Lista de Quiz"]:::comp
+    SQUIZ["Sessão de Quiz"]:::comp
+    LTEAM["Lista de Times"]:::comp
+    CPAY["Criação de Pagamento"]:::comp
+    CONF["Confirmação de Pagamento"]:::comp
+    DASH["Dashboard"]:::comp
+  end
+
+  CLI <--> AUTH
+  CLI <--> CMS
+  CLI <--> OPER
+  CLI <--> ANALYTICS
+```
+
+### Diagrama — CMS (módulos internos)
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+  classDef db fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+
+  DB_CMS[(CMS DB)]:::db
+  CACHE[(Cache)]:::db
+  CLI["Cliente"]:::comp
+  OPER["Operador"]:::compCore
+
+  subgraph CMS["CMS"]
+    Q["Quizzes"]:::comp
+    R["Respostas"]:::comp
+    T["Times"]:::comp
+    P["Perguntas"]:::comp
+    A["Auth Admin"]:::comp
+    FE["FrontEnd do CMS"]:::comp
+  end
+
+  CMS --> CLI
+  CMS --> OPER
+  CMS <--> DB_CMS
+  CMS <-.-> CACHE
+```
+
+### Diagrama — Autenticação (módulos internos)
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+
+  CLI["Cliente"]:::comp
+  OPER["Operador"]:::compCore
+
+  subgraph AUTH["Auth"]
+    DBUS["Banco de Usuários Finais"]:::comp
+    CAD["Cadastro"]:::comp
+    LOGIN["Login com Senha"]:::comp
+    REC["Recuperação de Senha"]:::comp
+  end
+
+  AUTH <--> CLI
+  AUTH <--> OPER
+```
+
+### Diagrama — Pagamentos (módulos internos)
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+
+  OPER["Operador"]:::compCore
+
+  subgraph PAY["Pagamentos"]
+    BANK["Banco de Transações"]:::comp
+    VALID["Validador de Transações"]:::comp
+    EMIT["Emissor de Eventos"]:::comp
+    ANTI["Anti-Fraude"]:::comp
+    DASH["Dashboard"]:::comp
+  end
+
+  PAY <--> OPER
+```
+
+### Diagrama — Notificações/Analytics
+```mermaid
+flowchart TB
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+  classDef compCore fill:transparent,stroke:#333,stroke-width:3px,color:#333
+
+  CLI["Cliente"]:::comp
+  OPER["Operador"]:::compCore
+
+  subgraph ANALYTICS["Analytics"]
+    DASH["Dashboard"]:::comp
+    SCHED["Agendador"]:::comp
+  end
+
+  ANALYTICS <--> CLI
+  ANALYTICS <--> OPER
+```
+
+## Diagrama de Módulos (Pacotes/UML)
+Representação dos módulos por domínio (DDD), agrupando domínios principais e genéricos.
+
+```mermaid
+flowchart LR
+  classDef comp fill:transparent,stroke:#333,stroke-width:2.5px,color:#333
+
+  subgraph PRINCIPAL["Principal"]
+    OP{{Operador}}:::comp
+    CLI{{Cliente}}:::comp
+  end
+  subgraph GENERICO["Genérico"]
+    CMS{{CMS}}:::comp
+    AN{{Analytics}}:::comp
+    AU{{Auth}}:::comp
+    PAY{{Pagamento}}:::comp
+  end
+```
+
+## Táticas por Característica
+
+- Disponibilidade: health checks e SLOs por endpoint; timeouts e retries com backoff; fail-fast em integrações externas.
+- Elasticidade: escalonamento automático, cache de leitura e compressão; filas/eventos para desacoplamento quando aplicável.
+- Manutenibilidade: modularização por contexto; contratos versionados; CI/CD com canary/rollback; observabilidade distribuída.
+- Autenticação/Autorização: tokens com escopos e validade; segregação de contexto (admin x cliente); MFA opcional.
+
+## Decisões Arquiteturais (ADRs)
+
+- ADR-001 — Estilo Arquitetural
+  - Contexto: regras de negócio de quiz coesas, integrações diversas (Auth, Pagamentos, Analytics, CMS).
+  - Decisão: Modular Monolith para Operador + serviços gerenciados para capacidades genéricas; FrontEnd como PWA.
+  - Consequências: consistência transacional no core; menor esforço operacional nos genéricos; dependência de terceiros com SLAs.
+
+- ADR-002 — Top 4 Características
+  - Contexto: requisitos funcionais (REQ 06, 07, 13, 15, 17) expostos nos slides.
+  - Decisão: priorizar Disponibilidade, Elasticidade, Manutenibilidade e Autenticação/Autorização.
+  - Consequências: seleção de serviços gerenciados, ênfase em observabilidade e táticas de resiliência.
+
+- ADR-003 — Autenticação Gerenciada
+  - Contexto: necessidade de login, recuperação de senha, tokens e integração com push.
+  - Decisão: usar provedor gerenciado (ex.: Firebase Auth) para usuários finais; admins via CMS.
+  - Consequências: redução de manutenção e riscos de segurança; dependência do fornecedor.
+
+- ADR-004 — Pagamentos Externos com Webhooks Idempotentes
+  - Contexto: compra de créditos via PIX e repasse de 30% ao vencedor.
+  - Decisão: integrar provedor de pagamentos (ex.: Mercado Pago/Stripe) com webhooks idempotentes.
+  - Consequências: confiabilidade na reconciliação; maior segurança; taxas por transação.
+
+- ADR-005 — Observabilidade e Telemetria
+  - Contexto: janelas de pico, necessidade de diagnóstico rápido.
+  - Decisão: coletar métricas e eventos (Analytics), logs e erros (error monitoring), dashboards e alertas.
+  - Consequências: detecção mais rápida de incidentes e melhor dimensionamento.
+
+## Telas da Aplicação
+Conjunto de telas derivadas dos módulos do Cliente (PWA):
+- Autenticação e Cadastro
+- Lista de Quiz e Sessão de Quiz
+- Rankings e Lista de Times
+- Criação e Confirmação de Pagamento
+- Dashboard do Usuário
+
+Fluxo simplificado das telas:
+```mermaid
+flowchart LR
+  Login --> Cadastro
+  Login --> ListaQuiz
+  ListaQuiz --> SessaoQuiz
+  SessaoQuiz --> Rankings
+  ListaQuiz --> ListaTimes
+  ListaQuiz --> CriarPagamento
+  CriarPagamento --> ConfirmacaoPagamento
+  Login --> Dashboard
+```
+
+---
+
+Observação: Este README foi enriquecido a partir do conteúdo dos slides presentes no projeto (componentes, justificativas e diagramas), mantendo os temas e escopo originais.
