@@ -276,30 +276,30 @@ flowchart LR
 
 ## Decisões Arquiteturais (ADRs)
 
-- ADR-001 — Estilo Arquitetural
-  - Contexto: regras de negócio de quiz coesas, integrações diversas (Auth, Pagamentos, Analytics, CMS).
-  - Decisão: Monolito Modular para Operador + serviços gerenciados para capacidades genéricas; FrontEnd como PWA.
-  - Consequências: consistência transacional no core; menor esforço operacional nos genéricos; dependência de terceiros.
+- ADR-001 — Top 4 Características
+    - Contexto: priorizar as características mais importantes usando os requisitos como base.
+    - Decisão: priorizar Disponibilidade, Elasticidade, Manutenibilidade e Autenticação/Autorização.
+    - Consequências: buscar táticas e filtrar soluções que atendam essas características, mesmo que impactem outras menos prioritárias.
+    - 
+- ADR-002 — Arquitetura DDD
+    - Contexto: delimitar o esforço de desenvolvimento e manutenção focando nos recursos diferenciais.
+    - Decisão: adotar DDD para o domínio principal (Operador/BFF) e usar serviços gerenciados para capacidades genéricas (Auth, Pagamentos, Analytics, CMS)
+    - Consequências: buscar soluções prontas para domínios genéricos, reduzindo esforço de desenvolvimento e manutenção; foco no core do negócio.
 
-- ADR-002 — Top 4 Características
-  - Contexto: requisitos funcionais (REQ 06, 07, 13, 15, 17) expostos nos slides.
-  - Decisão: priorizar Disponibilidade, Elasticidade, Manutenibilidade e Autenticação/Autorização.
-  - Consequências: seleção de serviços gerenciados, ênfase em observabilidade e táticas de resiliência.
+- ADR-003 — Estilo Arquitetural
+  - Contexto: modelagem do sistema considerando os domínios principais e genéricos identificados.
+  - Decisão: Monolito Modular para Operador + serviços gerenciados para capacidades genéricas
+  - Consequências: simplicidade operacional e consistência transacional no core; elasticidade e redução de manutenção em domínios genéricos.
 
-- ADR-003 — Autenticação Gerenciada
-  - Contexto: necessidade de login, recuperação de senha e integração com push.
-  - Decisão: usar provedor gerenciado para usuários finais; admins via CMS.
-  - Consequências: redução de manutenção e riscos de segurança; dependência do fornecedor.
-
-- ADR-004 — Pagamentos Externos com Webhooks Idempotentes
-  - Contexto: compra de créditos via PIX e repasse de 30% ao vencedor.
-  - Decisão: integrar provedor de pagamentos com webhooks idempotentes.
-  - Consequências: confiabilidade na reconciliação; maior segurança; taxas por transação.
-
-- ADR-005 — Observabilidade e Telemetria
+- ADR-004 — Monitoramento e Observabilidade
   - Contexto: janelas de pico, necessidade de diagnóstico rápido.
   - Decisão: coletar métricas e eventos (Analytics), logs e erros (error monitoring), dashboards e alertas.
-  - Consequências: detecção mais rápida de incidentes e melhor dimensionamento.
+  - Consequências: Detecção mais rápida de incidentes e melhor dimensionamento de recursos com dados concretos; evitar super escalonamento e novos componentes arquitetural sem uma clara justificativa
+
+- ADR-005 — FrontEnd em PWA e/ou Cross-Platform
+  - Contexto: diversidade de dispositivos e necessidade de boa experiência com baixo custo.
+  - Decisão: adotar PWA (Ionic/React) para atender múltiplas plataformas com uma única base de código
+  - Consequências: menor custo de desenvolvimento e manutenção, boa experiência em dispositivos móveis e desktop, possível limitação em funcionalidades nativas.
 
 ## Telas da Aplicação
 Conjunto de telas derivadas dos módulos do Cliente (PWA):
@@ -321,3 +321,25 @@ flowchart LR
   CriarPagamento --> ConfirmacaoPagamento
   Login --> Dashboard
 ```
+
+## Telas do MVP
+
+Referências às imagens das telas (pasta `images/`):
+- Login: `images/login.jpeg`
+- Menu Principal: `images/main_menu.jpeg`
+- Quiz: `images/quiz.jpeg`
+- Ranking: `images/ranking.jpeg`
+- Pagamento de Créditos: `images/credit_pay.jpeg`
+
+Prévia visual (amostras):
+
+<p align="center">
+  <img src="images/login.jpeg" alt="Login" width="320" />
+  <img src="images/main_menu.jpeg" alt="Menu Principal" width="320" />
+  <br/>
+  <img src="images/quiz.jpeg" alt="Quiz" width="320" />
+  <img src="images/ranking.jpeg" alt="Ranking" width="320" />
+  <br/>
+  <img src="images/credit_pay.jpeg" alt="Pagamento de Créditos" width="320" />
+  
+</p>

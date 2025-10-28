@@ -12,7 +12,7 @@ import {
   Stepper
 } from 'spectacle';
 import { Mermaid } from './components/Mermaid';
-import { FiCheckSquare, FiFileText, FiCpu } from 'react-icons/fi';
+import { FiCheckSquare, FiFileText, FiCpu, FiAward, FiLayers, FiLifeBuoy } from 'react-icons/fi';
 
 // Tema flat global — acessível (alto contraste)
 const theme = {
@@ -38,6 +38,44 @@ const InfoBlock: React.FC<React.PropsWithChildren<{ style?: React.CSSProperties 
     }}
   >
     {children}
+  </div>
+);
+
+// Grade vertical para ADRs: 3 linhas iguais ocupando 100% da altura
+const ADRGrid: React.FC<{
+  sections: { heading: string; body: React.ReactNode }[];
+}> = ({ sections }) => (
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateRows: `repeat(${sections.length}, minmax(0, 1fr))`,
+      gap: '10px',
+      height: '100%',
+      minHeight: 0,
+      width: '100%',
+    }}
+  >
+    {sections.map((s, i) => (
+      <div
+        key={i}
+        style={{
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 10,
+          background: 'rgba(255,255,255,0.03)',
+          padding: '0.75em',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <SubSectionTitle>{s.heading}</SubSectionTitle>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 18, color: '#ffffff', lineHeight: 1.6, textAlign: 'center' }}>{s.body}</div>
+        </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -72,7 +110,20 @@ const CardDivider: React.FC = () => (
 
 // Layout auxiliar: seções em 2 colunas
 const TwoColSections: React.FC<React.PropsWithChildren<{ gap?: string }>> = ({ children, gap = '1rem' }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap }}>{children}</div>
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap,
+      height: '100%',
+      minHeight: 0,
+      width: '100%',
+      alignItems: 'stretch',
+      justifyItems: 'stretch',
+    }}
+  >
+    {children}
+  </div>
 );
 
 // Grid de características: 3 colunas fixas (subcards com borda leve)
@@ -141,15 +192,15 @@ const RequirementCard: React.FC<React.PropsWithChildren<{ title: string; centerC
 
 // Card de Módulos (ícone por props; sem divisórias/sem footer)
 type IconTypeProp = React.ComponentType<{ size?: number; color?: string; style?: React.CSSProperties }>;
-const ModuleCard: React.FC<React.PropsWithChildren<{ title: string; icon: IconTypeProp; centerContent?: boolean }>> = ({ title, icon: Icon, children, centerContent = false }) => (
+const ModuleCard: React.FC<React.PropsWithChildren<{ title: string; icon: IconTypeProp; centerContent?: boolean; fill?: boolean }>> = ({ title, icon: Icon, children, centerContent = false, fill = true }) => (
   <div
     style={{
       background: 'rgba(255,255,255,0.06)',
       border: '1px solid rgba(255,255,255,0.12)',
       borderRadius: 12,
       padding: '0.8em',
-      height: '100%',
-      flex: 1,
+      height: fill ? '100%' : 'auto',
+      flex: fill ? 1 : 'initial',
       display: 'flex',
       flexDirection: 'column',
       minWidth: 0,
@@ -239,6 +290,8 @@ const Presentation = () => (
         </div>
       </FlexBox>
     </Slide>
+
+
 
 
     {/* Principais Características - título (antes de Disponibilidade) */}
@@ -543,10 +596,144 @@ const Presentation = () => (
       </FlexBox>
     </Slide>
 
-    {/* Componentes Principais - título */}
+      {/* ADR-001 */}
+      <Slide backgroundColor="background">
+          <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em" gap="0.75rem">
+              <ModuleCard title="ADR-001 — Top 4 Características" icon={FiFileText}>
+                  <ADRGrid
+                      sections={[
+                          {
+                              heading: 'Contexto',
+                              body: (
+                                  <>
+                                      Priorizar as características arquiteturais mais importantes usando os requisitos como base.
+                                  </>
+                              ),
+                          },
+                          {
+                              heading: 'Decisão',
+                              body: (
+                                  <>
+                                      Priorizar Disponibilidade, Elasticidade, Manutenibilidade e Autenticação/Autorização.
+                                  </>
+                              ),
+                          },
+                          {
+                              heading: 'Consequências',
+                              body: (
+                                  <>
+                                      Direcionar táticas e filtrar soluções que atendam essas características, mesmo com impactos secundários em outras menos prioritárias.
+                                  </>
+                              ),
+                          },
+                      ]}
+                  />
+              </ModuleCard>
+          </FlexBox>
+      </Slide>
+
+    {/* Intro Subdomínios */}
+    <Slide>
+      <FlexBox height="100%" alignItems="center" justifyContent="center" flexDirection="column">
+        <Heading fontSize="72px" textAlign="center" style={{ letterSpacing: -0.5, lineHeight: 1.1 }}>Pensando em Subdominios</Heading>
+        <div style={{ width: 160, height: 3, background: 'rgba(255,255,255,0.22)', borderRadius: 9999, margin: '14px 0 10px' }} />
+        <Text fontSize="26px" color="#E2E8F0" style={{ letterSpacing: 1.2, textTransform: 'uppercase', opacity: 0.95 }}>Domain Driven Design</Text>
+      </FlexBox>
+    </Slide>
+
+    {/* Tipos de Subdomínios */}
+    <Slide>
+      <FlexBox height="100%" width="100%" flexDirection="column" alignItems="stretch" justifyContent="center" padding="1em">
+        <div style={{ width: '100%', maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.75rem' }}>
+          <Heading fontSize="40px" margin="0" textAlign="center">Tipos de Subdomínios</Heading>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem', width: '100%', alignItems: 'start' }}>
+          <ModuleCard title="Principal" icon={FiAward} centerContent fill={false}>
+            <Text fontSize="16px" style={{ lineHeight: 1.6, wordBreak: 'break-word', textAlign: 'center' }}>
+              Diferencial competitivo; inovação/otimização que impacta o negócio; Desenvolvimento direto
+            </Text>
+          </ModuleCard>
+          <ModuleCard title="Genérico" icon={FiLayers} centerContent fill={false}>
+            <Text fontSize="16px" style={{ lineHeight: 1.6, wordBreak: 'break-word', textAlign: 'center' }}>
+              Comum a todos; sem vantagem; uso de soluções consolidadas e integrações;
+            </Text>
+          </ModuleCard>
+          <ModuleCard title="Suporte" icon={FiLifeBuoy} centerContent fill={false}>
+            <Text fontSize="16px" style={{ lineHeight: 1.6, wordBreak: 'break-word', textAlign: 'center' }}>
+              Apoia o negócio; operações simples para análises; essencial, mas sem vantagem direta.
+            </Text>
+          </ModuleCard>
+          </div>
+        </div>
+      </FlexBox>
+    </Slide>
+
+      <Slide>
+          <FlexBox height="100%" width="100%" flexDirection="column" alignItems="stretch" justifyContent="flex-start" padding="1em">
+              <Heading fontSize="40px" margin="0 0 0.5em 0">Diagrama ( DDD )</Heading>
+              <Mermaid
+                  className="mermaid-fit-height"
+                  style={{ width: '100%', maxWidth: 1100, margin: '0 auto', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 12, overflow: 'hidden' }}
+                  config={{ startOnLoad: false, securityLevel: 'loose', theme: 'base', flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'linear' } }}
+                  chart={`
+            %%{init: {"themeCSS": ".cluster text{fill:#F8FAFC;transform:translateY(4px)} .cluster rect{stroke:#F8FAFC;rx:200;ry:200}"}}%%
+            flowchart LR
+              %% Estilos
+              classDef comp fill:transparent,stroke:#F8FAFC,stroke-width:2.5px,color:#F8FAFC
+
+              %% Dois círculos (clusters com bordas arredondadas) lado a lado
+              subgraph PRINCIPAL["Principal"]
+                direction TB
+                OP{{Operador}}:::comp
+                CLI{{Cliente}}:::comp
+              end
+              subgraph GENERICO["Genérico"]
+                direction TB
+                CMS{{CMS}}:::comp
+                AN{{Analytics}}:::comp
+                AU{{Auth}}:::comp
+                PAY{{Pagamento}}:::comp
+              end
+              style PRINCIPAL fill:transparent,stroke:#F8FAFC,stroke-width:3px,color:#F8FAFC
+              style GENERICO fill:transparent,stroke:#F8FAFC,stroke-width:3px,color:#F8FAFC
+          `}
+              />
+          </FlexBox>
+      </Slide>
+
+      {/* ADR-002 */}
+      <Slide backgroundColor="background">
+          <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em" gap="0.75rem">
+              <ModuleCard title="ADR-002 — Arquitetura DDD" icon={FiFileText}>
+                  <ADRGrid
+                      sections={[
+                          {
+                              heading: 'Contexto',
+                              body: (
+                                  <>Delimitar o esforço de desenvolvimento e manutenção, focando nos recursos diferenciais do negócio.</>
+                              ),
+                          },
+                          {
+                              heading: 'Decisão',
+                              body: (
+                                  <>Adotar DDD para a separação do domínio principal (Operador/BFF) e usar serviços gerenciados ou soluções prontas para domínios genéricas (Auth, Pagamentos, Analytics, CMS).</>
+                              ),
+                          },
+                          {
+                              heading: 'Consequências',
+                              body: (
+                                  <>Redução de esforço em domínios genéricos ao buscar soluções prontas; foco no core do negócio com contratos claros entre módulos.</>
+                              ),
+                          },
+                      ]}
+                  />
+              </ModuleCard>
+          </FlexBox>
+      </Slide>
+
+    {/* Componentes Arquiteturais - título */}
     <Slide>
       <FlexBox height="100%" alignItems="center" justifyContent="center">
-        <Heading fontSize="56px" textAlign="center">Componentes Principais</Heading>
+        <Heading fontSize="56px" textAlign="center">Componentes Arquiteturais</Heading>
       </FlexBox>
     </Slide>
 
@@ -609,6 +796,22 @@ const Presentation = () => (
               CMS <--> DB_CMS
           `}
               />
+          </FlexBox>
+      </Slide>
+
+
+      {/* ADR-003 */}
+      <Slide backgroundColor="background">
+          <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em" gap="0.75rem">
+              <ModuleCard title="ADR-003 — Estilo Arquitetural" icon={FiFileText}>
+                  <ADRGrid
+                      sections={[
+                          { heading: 'Contexto', body: <>Modelagem do sistema considerando os domínios principais e genéricos identificados.</> },
+                          { heading: 'Decisão', body: <>Monolito Modular para o Operador, com serviços gerenciados para capacidades genéricas.</> },
+                          { heading: 'Consequências', body: <>Simplicidade operacional e consistência transacional no core; elasticidade e menor manutenção para domínios genéricos.</> },
+                      ]}
+                  />
+              </ModuleCard>
           </FlexBox>
       </Slide>
 
@@ -1131,6 +1334,21 @@ const Presentation = () => (
           </FlexBox>
       </Slide>
 
+      {/* ADR-004 */}
+      <Slide backgroundColor="background">
+          <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em" gap="0.75rem">
+              <ModuleCard title="ADR-004 — Monitoramento e Observabilidade" icon={FiFileText}>
+                  <ADRGrid
+                      sections={[
+                          { heading: 'Contexto', body: <>Janelas de pico e necessidade de diagnóstico rápido de incidentes e performance.</> },
+                          { heading: 'Decisão', body: <>Coletar métricas e eventos (Analytics), logs e erros; construir dashboards e alertas.</> },
+                          { heading: 'Consequências', body: <>Detecção mais rápida de incidentes e melhor dimensionamento de recursos com dados concretos; evitar super escalonamento e novos componentes arquitetural sem uma clara justificativa</> },
+                      ]}
+                  />
+              </ModuleCard>
+          </FlexBox>
+      </Slide>
+
     {/* 6) FrontEnd */}
     <Slide>
       <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em">
@@ -1243,41 +1461,97 @@ const Presentation = () => (
           </FlexBox>
       </Slide>
 
-      <Slide>
-          <FlexBox height="100%" width="100%" flexDirection="column" alignItems="stretch" justifyContent="flex-start" padding="1em">
-              <Heading fontSize="40px" margin="0 0 0.5em 0">Diagrama ( DDD )</Heading>
-              <Mermaid
-                  className="mermaid-fit-height"
-                  style={{ width: '100%', maxWidth: 1100, margin: '0 auto', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 12, overflow: 'hidden' }}
-                  config={{ startOnLoad: false, securityLevel: 'loose', theme: 'base', flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'linear' } }}
-                  chart={`
-            %%{init: {"themeCSS": ".cluster text{fill:#F8FAFC;transform:translateY(4px)} .cluster rect{stroke:#F8FAFC;rx:200;ry:200}"}}%%
-            flowchart LR
-              %% Estilos
-              classDef comp fill:transparent,stroke:#F8FAFC,stroke-width:2.5px,color:#F8FAFC
 
-              %% Dois círculos (clusters com bordas arredondadas) lado a lado
-              subgraph PRINCIPAL["Principal"]
-                direction TB
-                OP{{Operador}}:::comp
-                CLI{{Cliente}}:::comp
-              end
-              subgraph GENERICO["Genérico"]
-                direction TB
-                CMS{{CMS}}:::comp
-                AN{{Analytics}}:::comp
-                AU{{Auth}}:::comp
-                PAY{{Pagamento}}:::comp
-              end
-              style PRINCIPAL fill:transparent,stroke:#F8FAFC,stroke-width:3px,color:#F8FAFC
-              style GENERICO fill:transparent,stroke:#F8FAFC,stroke-width:3px,color:#F8FAFC
-          `}
+      {/* Telas do MVP — título */}
+      <Slide>
+        <FlexBox height="100%" alignItems="center" justifyContent="center">
+          <Heading fontSize="56px" textAlign="center">Telas do MVP</Heading>
+        </FlexBox>
+      </Slide>
+
+      {/* Telas do MVP — Slide 1 */}
+      <Slide backgroundColor="background">
+        <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="1.25em" gap="0.5rem" style={{ minHeight: 0 }}>
+          <Heading fontSize="40px" color="primary" margin="0 0 0.25em 0">Autenticação e Menu</Heading>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <TwoColSections gap="1.5rem">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', maxHeight: '100%', minWidth: 0, overflow: 'hidden' }}>
+              <img
+                src="images/login.jpeg"
+                alt="Tela de Login"
+                style={{ maxHeight: '100%', maxWidth: '100%', height: '100%', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)' }}
               />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', maxHeight: '100%', minWidth: 0, overflow: 'hidden' }}>
+              <img
+                src="images/main_menu.jpeg"
+                alt="Menu Principal"
+                style={{ maxHeight: '100%', maxWidth: '100%', height: '100%', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)' }}
+              />
+            </div>
+          </TwoColSections>
+          </div>
+        </FlexBox>
+      </Slide>
+
+      {/* Telas do MVP — Slide 2 */}
+      <Slide backgroundColor="background">
+        <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="1.25em" gap="0.5rem" style={{ minHeight: 0 }}>
+          <Heading fontSize="40px" color="primary" margin="0 0 0.25em 0">Quiz e Ranking</Heading>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <TwoColSections gap="1.5rem">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', maxHeight: '100%', minWidth: 0, overflow: 'hidden' }}>
+              <img
+                src="images/quiz.jpeg"
+                alt="Tela de Quiz"
+                style={{ maxHeight: '100%', maxWidth: '100%', height: '100%', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', maxHeight: '100%', minWidth: 0, overflow: 'hidden' }}>
+              <img
+                src="images/ranking.jpeg"
+                alt="Tela de Ranking"
+                style={{ maxHeight: '100%', maxWidth: '100%', height: '100%', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)' }}
+              />
+            </div>
+          </TwoColSections>
+          </div>
+        </FlexBox>
+      </Slide>
+
+      {/* Telas do MVP — Slide 3 */}
+      <Slide backgroundColor="background">
+        <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="1.25em" gap="0.5rem" style={{ minHeight: 0 }}>
+          <Heading fontSize="40px" color="primary" margin="0 0 0.25em 0">Pagamento de Créditos</Heading>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', width: '100%' }}>
+            <img
+              src="images/credit_pay.jpeg"
+              alt="Pagamento de Créditos"
+              style={{ maxHeight: '100%', maxWidth: '100%', height: '100%', width: 'auto', objectFit: 'contain', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)' }}
+            />
+          </div>
+        </FlexBox>
+      </Slide>
+
+      {/* ADR-005 */}
+      <Slide backgroundColor="background">
+          <FlexBox flexDirection="column" alignItems="stretch" justifyContent="flex-start" height="100%" padding="2em" gap="0.75rem">
+              <ModuleCard title="ADR-005 — FrontEnd PWA/Cross-Platform" icon={FiFileText}>
+                  <ADRGrid
+                      sections={[
+                          { heading: 'Contexto', body: <>Diversidade de dispositivos e necessidade de boa experiência com baixo custo.</> },
+                          { heading: 'Decisão', body: <>Adotar PWA (Ionic/React) para atender múltiplas plataformas com uma única base de código.</> },
+                          { heading: 'Consequências', body: <>Menor custo de desenvolvimento e manutenção; boa experiência em mobile e desktop, com possíveis limitações em funcionalidades nativas.</> },
+                      ]}
+                  />
+              </ModuleCard>
           </FlexBox>
       </Slide>
 
 
-    {/* Encerramento */}
+
+
+      {/* Encerramento */}
     <Slide>
       <FlexBox height="100%" alignItems="center" justifyContent="center">
         <Heading fontSize="56px" textAlign="center">Fim</Heading>
